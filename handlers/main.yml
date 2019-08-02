@@ -1,0 +1,36 @@
+---
+# handlers file for postgres
+
+- name: Enable and start PostgreSQL Server service
+  systemd:
+    name: "{{ postgresql_service }}"
+    enabled: yes
+    state: started
+
+- name: Restart PostgreSQL Server service
+  systemd:
+    name: "{{ postgresql_service }}"
+    daemon_reload: yes
+    state: restarted
+
+- name: Stop PostgreSQL Server service
+  systemd:
+    name: "{{ postgresql_service }}"
+    state: stopped
+
+- name: Enable and start repmgr service
+  systemd:
+    name: "{{ postgresql_ha_service }}"
+    enabled: yes
+    state: started
+
+- name: Restart repmgr service
+  systemd:
+    name: "{{ postgresql_ha_service }}"
+    daemon_reload: yes
+    state: restarted
+
+- name: Stop repmgr service
+  systemd:
+    name: "{{ postgresql_ha_service }}"
+    state: stopped

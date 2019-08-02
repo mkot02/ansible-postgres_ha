@@ -1,0 +1,123 @@
+---
+
+- name: Install Replication Manager
+  yum:
+    name:
+      - repmgr96
+    state: present
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+    notify: Enable and start repmgr service
+
+- name: Configure repmgr
+  template:
+    src: repmgr.conf.j2
+    dest: "{{ postgresql_ha_cfgfile }}"
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: 0644
+
+- name: Configure repmgr service
+  template:
+    src: repmgr96.service.j2
+    dest: "/etc/systemd/system/{{ postgresql_ha_service }}"
+    owner: root
+    group: root
+    mode: 0644
+
+
+# Configure repmgr and Posgres on repmgr master node
+- block: 
+  - name: Configure PostgreSQL configuration for repmgr
+    template:
+      src: postgresql.repmgr.conf.j2
+      dest: "{{ postgresql_data_dir}}/postgresql.repmgr.conf"
+      owner: "{{ postgresql_user }}"
+      group: "{{ postgresql_group }}"
+      mode: 0600
+  
+  - name: Create PostgreSQL user for repmgr
+    postgresql_user:
+      name: repmgr
+      role_attr_flags: SUPERUSER
+      state: present
+    become: true
+    become_user: "{{ postgresql_user }}"
+  
+  - name: Create database for repmgr
+    postgresql_db:
+      name: repmgr
+      owner: repmgr
+      state: present
+    become: true
+    become_user: "{{ postgresql_user }}"
+
+  - name: Restart PostgreSQL Server service on master node
+    systemd:
+      name: "{{ postgresql_service }}" 
+      state: restarted
+  
+  - name: Wait for PostgreSQL Serve to start on master node
+    wait_for:
+      port: 5432
+      state: started
+
+  - name: Set search path for DB user
+    postgresql_query:
+      query: ALTER USER repmgr SET search_path TO repmgr_test, "$user", public;
+    become: true
+    become_user: "{{ postgresql_user }}"
+  when: postgresql_ha_config.role == 'master' # end of block
+
+
+# Restart PostgreSQL service and register master node 
+# only if this is fresh or forced installation
+- block:
+  - name: Restart PostgreSQL Server service on master node
+    systemd:
+      name: "{{ postgresql_service }}" 
+      state: restarted
+  
+  - name: Wait for PostgreSQL Serve to start on master node
+    wait_for:
+      port: 5432
+      state: started
+
+  - name: Register repmgr master node
+    command: "{{ postgresql_bin_path }}/repmgr -f {{ postgresql_ha_cfgfile }} primary register --log-to-file"
+    become: true
+    become_user: "{{ postgresql_user }}"
+    notify: Restart repmgr service
+  when: # end of block
+    - postgresql_ha_config.role == 'master'
+    - not postgresql_initialised or postgresql_init_force
+
+
+# Configure repmgr and Posgres on repmgr standby node
+- block: 
+  - name: Check if standby node is ready for cloning
+    command: "{{ postgresql_bin_path }}/repmgr -h {{ postgresql_ha_master }} -U repmgr -d repmgr -f {{ postgresql_ha_cfgfile }} standby clone --dry-run"
+    become: true
+    become_user: "{{ postgresql_user }}"
+  
+  - name: Clone repmgr standby server
+    command: "{{ postgresql_bin_path }}/repmgr -h {{ postgresql_ha_master }} -U repmgr -d repmgr -f {{ postgresql_ha_cfgfile }} standby clone --log-to-file"
+    become: true
+    become_user: "{{ postgresql_user }}"
+
+  - name: Enable and start PostgreSQL Server service on standby node
+    systemd:
+      name: "{{ postgresql_service }}" 
+      enabled: yes
+      state: started
+  
+  - name: Register repmgr standby server
+    command: "{{ postgresql_bin_path }}/repmgr -f {{ postgresql_ha_cfgfile }} standby register --log-to-file"
+    become: true
+    become_user: "{{ postgresql_user }}"
+    notify: Restart repmgr service
+  when:  # end of block
+    - postgresql_ha_config.role == 'standby'
+    - not postgresql_initialised or postgresql_init_force
+

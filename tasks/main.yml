@@ -1,0 +1,42 @@
+---
+
+- import_tasks: install_postgres.yml
+  tags:
+    - install
+
+# Verify mandatory variables for repmgr  if postgresql_ha is set to 'yes'
+- block:
+  - name: Check mandatory variables for group
+    assert:
+      that:
+        - "{{ item }} is defined"
+      fail_msg: "Mandatory group variable {{ item }} for is not defined"
+      quiet: yes
+    loop:
+      - postgresql_ha_master
+    run_once: true
+
+  - name: Check mandatory variables for hosts
+    assert:
+      that:
+        - "{{ item }} is defined"
+      fail_msg: "Mandatory variable postgresql_ha_config for host {{ item }} is not defined"
+      quiet: yes
+    loop:
+      - postgresql_ha_config
+      - postgresql_ha_config.role
+      - postgresql_ha_config.node_id
+  when: postgresql_ha|bool # end of block
+
+
+# Run repmgr taks if postgresql_ha is set to 'yes'
+- block:
+  - import_tasks: configure_ssh_keys.yml
+    tags:
+      - install 
+  
+  - import_tasks: install_repmgr.yml
+    tags:
+      - install
+  when: postgresql_ha|bool # end of block
+

@@ -1,0 +1,45 @@
+---
+
+- name: Create SSH directory
+  file:
+    path: ~/.ssh
+    mode: 0700
+    state: directory
+  become: true
+  become_user: "{{ postgresql_user }}"
+
+- name: Generate SSH keypair
+  openssh_keypair:
+    path: ~/.ssh/id_rsa
+    type: rsa
+    state: present
+    mode: 0600
+  register: ssh_keygen_out
+  become: true
+  become_user: "{{ postgresql_user }}"
+
+- name: Configure authorized_keys
+  authorized_key:
+    key: "{{ hostvars[item]['ssh_keygen_out']['public_key'] }}"
+    user: "{{ postgresql_user }}"
+    manage_dir: yes
+    state: present
+  loop: "{{ groups['postgres'] }}"
+  loop_control:
+    label: "{{ item }} pubkey"
+
+- name: Collect fingerprints
+  command: "ssh-keyscan -t ecdsa-sha2-nistp256 {% for host in groups['postgres'] %}{{ hostvars[host]['ansible_ssh_host'] }} {% endfor %} 2> /dev/null"
+  register: __ssh_fingerprints
+
+- name: Configure known_hosts
+  known_hosts:
+    name: "{{ host_entry.name }}"
+    hash_host: no
+    key: "{{ host_entry.fingerprint }}"
+    state: present
+  vars:
+    host_entry: "{{ {'name':item.split()[0], 'fingerprint':item} }}"
+  loop: "{{ __ssh_fingerprints.stdout_lines }}"
+  become: true
+  become_user: "{{ postgresql_user }}"

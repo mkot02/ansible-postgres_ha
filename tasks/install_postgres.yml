@@ -1,0 +1,118 @@
+---
+
+- name: Install PostgreSQL repo
+  yum:
+    name: "{{ postgresql_repo_url }}"
+    state: present
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+
+- name: Install PostgreSQL
+  yum:
+    name:
+      - postgresql96
+      - postgresql96-server
+      - postgresql96-contrib
+      - python-psycopg2
+    state: present
+  environment:
+    http_proxy: "{{ http_proxy }}"
+    https_proxy: "{{ https_proxy }}"
+
+- name: Add postgres user to sudoers
+  template:
+    src: sudoers.j2
+    dest: "/etc/sudoers.d/{{ postgresql_user }}"
+    owner: root
+    group: root
+    mode: 0440
+
+- name: Configure PostgreSQL service
+  template:
+    src: postgresql-9.6.service.j2
+    dest: "/etc/systemd/system/{{ postgresql_service }}"
+    owner: root
+    group: root
+    mode: 0644
+
+- name: Create log directory
+  file:
+    path: "{{ postgresql_log_dir }}"
+    state: directory
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: 0755
+
+- name: Configure postgres user's profile
+  template:
+    src: bash_profile.j2
+    dest: ~/.bash_profile
+    owner: "{{ postgresql_user }}"
+    group: "{{ postgresql_group }}"
+    mode: 0700
+  become: true
+  become_user: "{{ postgresql_user }}"
+
+- name: Check if PostgreSQL database is initialized
+  stat:
+    path: "{{ postgresql_data_dir }}/PG_VERSION"
+  register: __pg_version_dir
+
+- name: Get initialisation status 
+  set_fact:
+    postgresql_initialised: "{{ __pg_version_dir.stat.exists | bool }}"
+
+
+# Init master node or both nodes if HA is disabled
+# This block will be invoked only if DB hasn't been
+# initialised yet or if postgresql_init_force is set to yes
+- block:
+  - name: Remove data directory
+    file:
+      path: "{{ postgresql_data_dir }}"
+      state: absent
+  
+  - name: Create data directory
+    file:
+      path: "{{ postgresql_data_dir }}"
+      state: directory
+      owner: "{{ postgresql_user }}"
+      group: "{{ postgresql_group }}"
+      mode: 0700
+  when: not postgresql_initialised or postgresql_init_force # end of block
+
+
+- name: Init PostgreSQL Server
+  command: "{{ postgresql_bin_path }}/initdb -D {{ postgresql_data_dir }}"
+  become: true
+  become_user: "{{ postgresql_user }}"
+  notify: Enable and start PostgreSQL Server service
+  when: 
+    - not postgresql_ha|bool or postgresql_ha_config.role|default('none') == 'master'
+    - not postgresql_initialised or postgresql_init_force
+
+
+# Provision configuration files on master node or both nodes if HA is disabled
+- block:
+  - name: Configure PostgreSQL Server
+    template:
+      src: postgresql.conf.j2
+      dest: "{{ postgresql_data_dir}}/postgresql.conf"
+      owner: "{{ postgresql_user }}"
+      group: "{{ postgresql_group }}"
+      mode: 0600
+    notify: Restart PostgreSQL Server service
+  
+  - name: Configure HBA entries for repmgr
+    template:
+      src: pg_hba.conf.j2
+      dest: "{{ postgresql_data_dir}}/pg_hba.conf"
+      owner: "{{ postgresql_user }}"
+      group: "{{ postgresql_group }}"
+      mode: 0600
+  when: not postgresql_ha|bool or postgresql_ha_config.role|default('none') == 'master' # end of block
+
+
+- name: Flush handlers
+  meta: flush_handlers

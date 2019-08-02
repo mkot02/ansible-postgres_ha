@@ -1,0 +1,4 @@
+# {{ ansible_managed }}
+
+Defaults:{{ postgresql_user }} !requiretty
+{{ postgresql_user }} ALL = NOPASSWD: /usr/bin/systemctl stop {{ postgresql_service }}, /usr/bin/systemctl start {{ postgresql_service }}, /usr/bin/systemctl restart {{ postgresql_service }}, /usr/bin/systemctl reload {{ postgresql_service }}

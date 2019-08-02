@@ -1,0 +1,18 @@
+galaxy_info:
+  author: mkot02
+  role_name: postgres_ha
+  description: PostgreSQL server with repmgr for EL7 Linux (CentOS/RHEL)
+  license: MIT
+  min_ansible_version: 2.8
+
+  platforms:
+  - name: EL
+    versions:
+    - 7
+
+  galaxy_tags:
+    - database
+    - postgresql
+    - postgres
+
+dependencies: []

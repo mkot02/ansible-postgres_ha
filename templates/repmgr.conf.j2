@@ -1,0 +1,49 @@
+#
+# {{ ansible_managed }}
+#
+
+# =============================================================================
+# Required configuration items
+# =============================================================================
+node_id={{ postgresql_ha_config.node_id }}
+node_name={{ inventory_hostname }}
+conninfo='host={{ hostvars[inventory_hostname].ansible_ssh_host }} dbname=repmgr user=repmgr connect_timeout=2'
+data_directory='{{ postgresql_data_dir }}'
+
+# =============================================================================
+# Optional configuration items
+# =============================================================================
+
+#------------------------------------------------------------------------------
+# Logging settings
+#------------------------------------------------------------------------------
+log_file='{{ postgresql_log_dir }}/repmgr-9.6.log'
+
+#------------------------------------------------------------------------------
+# Environment/command settings
+#------------------------------------------------------------------------------
+pg_bindir='{{ postgresql_bin_path }}'
+
+#------------------------------------------------------------------------------
+# External command options
+#------------------------------------------------------------------------------
+ssh_options='-q -o ConnectTimeout=10'
+
+#------------------------------------------------------------------------------
+# Failover and monitoring settings (repmgrd)
+#------------------------------------------------------------------------------
+failover='{{ postgresql_ha_failover }}'
+connection_check_type=connection
+priority={{ postgresql_ha_config.priority | default(100) }}
+promote_command='{{ postgresql_bin_path }}/repmgr standby promote -f {{ postgresql_ha_cfgfile }} --log-to-file'
+follow_command='{{ postgresql_bin_path }}/repmgr standby follow -f {{ postgresql_ha_cfgfile }} --log-to-file'
+
+#------------------------------------------------------------------------------
+# Service control commands
+#------------------------------------------------------------------------------
+service_start_command='sudo systemctl start {{ postgresql_service }}'
+service_stop_command='sudo systemctl stop {{ postgresql_service }}'
+service_restart_command='sudo systemctl restart {{ postgresql_service }}'
+service_reload_command='sudo systemctl reload {{ postgresql_service }}'
+repmgrd_service_start_command = 'sudo systemctl start {{ postgresql_ha_service }}'
+repmgrd_service_stop_command = 'sudo systemctl stop {{ postgresql_ha_service }}'
