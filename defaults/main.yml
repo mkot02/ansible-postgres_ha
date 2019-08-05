@@ -10,30 +10,17 @@ https_proxy: ''
 # ----------------------------------------------------------------------------
 # PostgreSQL settings
 # ----------------------------------------------------------------------------
-
-# Default repository location
 postgresql_repo_url: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
-
-# Default location of PostgreSQL binary files
 postgresql_bin_path: /usr/pgsql-9.6/bin
-
-# Default location of PostgreSQL PGDATA directory
 postgresql_data_dir: /var/lib/pgsql/data
-
-# Default location of PostgreSQL log directory
 postgresql_log_dir: /var/log/postgres
+postgresql_user: postgres
+postgresql_group: postgres
+postgresql_service: postgresql-9.6.service
 
 # Force initialisation of PostgreSQL DB.
 # If set to 'yes', PGDATA directory will be recreated
 postgresql_init_force: no
-
-# User and group that are used to start PostgreSQL service
-postgresql_user: postgres
-postgresql_group: postgres
-
-# Default name for PostgreSQL service
-postgresql_service: postgresql-9.6.service
-
 
 # ----------------------------------------------------------------------------
 # PostgreSQL settings for repmgr
