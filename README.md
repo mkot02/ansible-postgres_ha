@@ -1,38 +1,110 @@
-Role Name
-=========
+# Ansible Role: postgresql_ha
+Install and configure PostgreSQL9.6 server with repmgr failover cluster. 
 
-A brief description of the role goes here.
+## Requirements
+None
 
-Requirements
-------------
+## Role Variables
+A description of the settable variables for this role. 
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+### Mandatory variables
+These settings are mandatory only if `postgresql_ha` variable is set to `yes`.
 
-Role Variables
---------------
+#### Group variables
+Address IP or name which can be resolved to IP of master host in repmgr cluster:
+```
+postgresql_ha_master: <IP>
+```
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+#### Host variables
+Node configuration in repmgr cluster:
+role - master/standby
+node_id - unique number in cluster
+priority - 0-100
+```
+postgresql_ha_config:  
+  role: 'standby'
+  node_id: 1
+  priority: 100
+```
 
-Dependencies
-------------
+### Default variables
+Proxy settings (optional):
+```
+http_proxy: ''
+https_proxy: ''
+```
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+Repository location (optional):
+```
+postgresql_repo_url: https://download.postgresql.org/pub/repos/yum/reporpms/EL-7-x86_64/pgdg-redhat-repo-latest.noarch.rpm
+```
 
-Example Playbook
-----------------
+Location of PostgreSQL binary files (optional):
+```
+postgresql_bin_path: /usr/pgsql-9.6/bin
+```
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Location of PostgreSQL PGDATA directory (optional):
+```
+postgresql_data_dir: /var/lib/pgsql/data
+```
 
-    - hosts: servers
-      roles:
-         - { role: username.rolename, x: 42 }
+Location of PostgreSQL log directory (optional):
+```
+postgresql_log_dir: /var/log/postgres
+```
 
-License
--------
+Force initialisation of PostgreSQL DB. If set to 'yes', PGDATA directory will be recreated (optional)
+```
+postgresql_init_force: no
+```
 
-BSD
+User and group that are used to start PostgreSQL service (optional)
+```
+postgresql_user: postgres
+postgresql_group: postgres
+```
 
-Author Information
-------------------
+Name of PostgreSQL service (optional)
+```
+postgresql_service: postgresql-9.6.service
+```
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+repmgr installation and configuration for PostgreSQL nodes (optional)
+If set to 'yes', repmgr will be installed and confgured
+If set to 'no', multiple separate PostgreSQL servers will be created
+```
+postgresql_ha: no
+```
+
+Location of repmgr configuration file (optional):
+```
+postgresql_ha_cfgfile: /etc/repmgr/9.6/repmgr.conf
+```
+
+Name of repmgr service (optional): 
+```
+postgresql_ha_service: repmgr96.service
+```
+
+Repmgr failover method. Possible values [manual, automatic] (optional):
+```
+postgresql_ha_failover: automatic
+```
+
+## Dependencies
+None
+
+## Example Playbook
+```
+- hosts: psql_servers
+  roles:
+    - mkot02.postgresql_ha
+```
+
+## License
+MIT
+
+## Author Information
+Marcin Kotarba, 2019
