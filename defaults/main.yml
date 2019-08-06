@@ -6,7 +6,6 @@
 http_proxy: ''
 https_proxy: ''
 
-
 # ----------------------------------------------------------------------------
 # PostgreSQL settings
 # ----------------------------------------------------------------------------
@@ -17,10 +16,7 @@ postgresql_log_dir: /var/log/postgres
 postgresql_user: postgres
 postgresql_group: postgres
 postgresql_service: postgresql-9.6.service
-
-# Force initialisation of PostgreSQL DB.
-# If set to 'yes', PGDATA directory will be recreated
-postgresql_init_force: no
+postgresql_init_force: no # If set to 'yes', PGDATA directory will be recreated
 
 # ----------------------------------------------------------------------------
 # PostgreSQL settings for repmgr
@@ -30,13 +26,6 @@ postgresql_init_force: no
 # If set to 'yes', repmgr will be installed and confgured
 # If set to 'no', multiple separate PostgreSQL servers will be created
 postgresql_ha: no
-
-# Default location of repmgr configuration file
 postgresql_ha_cfgfile: /etc/repmgr/9.6/repmgr.conf
-
-# Default name for HA service
 postgresql_ha_service: repmgr96.service
-
-# Default failover method. 
-# Possible values: manual, automatic
-postgresql_ha_failover: automatic
+postgresql_ha_failover: automatic # [manual, automatic]
