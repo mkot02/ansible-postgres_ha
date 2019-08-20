@@ -104,7 +104,7 @@
       mode: 0600
     notify: Restart PostgreSQL Server service
   
-  - name: Configure HBA entries for repmgr
+  - name: Configure HBA entries
     template:
       src: pg_hba.conf.j2
       dest: "{{ postgresql_data_dir}}/pg_hba.conf"
