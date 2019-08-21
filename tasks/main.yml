@@ -10,7 +10,7 @@
     assert:
       that:
         - "{{ item }} is defined"
-      fail_msg: "Mandatory group variable {{ item }} for is not defined"
+      fail_msg: "Mandatory group variable {{ item }} is not defined"
       quiet: yes
     loop:
       - postgresql_ha_master
@@ -20,7 +20,7 @@
     assert:
       that:
         - "{{ item }} is defined"
-      fail_msg: "Mandatory variable postgresql_ha_config for host {{ item }} is not defined"
+      fail_msg: "Mandatory host variable {{ item }} is not defined"
       quiet: yes
     loop:
       - postgresql_ha_config

@@ -8,7 +8,8 @@
   environment:
     http_proxy: "{{ http_proxy }}"
     https_proxy: "{{ https_proxy }}"
-    notify: Enable and start repmgr service
+    no_proxy: "{{ no_proxy }}"
+  notify: Enable and start repmgr service
 
 - name: Configure repmgr
   template:
