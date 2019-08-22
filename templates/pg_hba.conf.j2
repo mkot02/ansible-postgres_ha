@@ -1,14 +1,8 @@
 # {{ ansible_managed }}
-
-
-# "local" is for Unix domain socket connections only
 local   all           all                                 trust
-
-# Local connections:
-host    all           postgres    127.0.0.1/32            trust
+host    all           all         127.0.0.1/32            trust
 host    all           all         ::1/128                 trust
-
-{% if postgresql_ha is defined %}
+{% if postgresql_ha|bool %}
 # Entries for repmgr
 local   replication   repmgr                              trust
 local   repmgr        repmgr                              trust
