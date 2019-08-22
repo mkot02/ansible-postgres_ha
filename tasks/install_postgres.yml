@@ -1,23 +1,25 @@
 ---
 
-- name: Install PostgreSQL repo
-  yum:
-    name: "{{ postgresql_repo_url }}"
-    state: present
-  environment:
-    http_proxy: "{{ http_proxy }}"
-    https_proxy: "{{ https_proxy }}"
-    no_proxy: "{{ no_proxy }}"
-
-- name: Install PostgreSQL
-  yum:
-    name:
-      - postgresql96
-      - postgresql96-server
-      - postgresql96-contrib
-      - python-psycopg2
-    state: present
-  environment:
+# Block with http_proxy env
+- block:
+  - name: Install PostgreSQL repo
+    yum:
+      name: "{{ postgresql_repo_url }}"
+      state: present
+  
+  - name: Install PostgreSQL
+    yum:
+      name:
+        - postgresql96
+        - postgresql96-server
+        - postgresql96-contrib
+        - python-psycopg2
+      state: present
+  
+  - name: Install ipaddress for postgresql_pg_hba
+    pip:
+      name: ipaddress
+  environment: # end of block
     http_proxy: "{{ http_proxy }}"
     https_proxy: "{{ https_proxy }}"
     no_proxy: "{{ no_proxy }}"
