@@ -24,12 +24,12 @@
     user: "{{ postgresql_user }}"
     manage_dir: yes
     state: present
-  loop: "{{ groups['postgres'] }}"
+  loop: "{{ play_hosts }}"
   loop_control:
     label: "{{ item }} pubkey"
 
 - name: Collect fingerprints
-  command: "ssh-keyscan -t ecdsa-sha2-nistp256 {% for host in groups['postgres'] %}{{ hostvars[host]['ansible_ssh_host'] }} {% endfor %} 2> /dev/null"
+  command: "ssh-keyscan -t ecdsa-sha2-nistp256 {% for host in play_hosts %}{{ hostvars[host]['ansible_ssh_host'] }} {% endfor %} 2> /dev/null"
   register: __ssh_fingerprints
 
 - name: Configure known_hosts
